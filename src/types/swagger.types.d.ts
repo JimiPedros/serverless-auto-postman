@@ -16,9 +16,12 @@ export interface Swagger {
 
 // Info Section
 export interface Info {
-  title?: string;
+  _postman_id?: string
+  name?: string;
   description?: string;
-  version: string;
+  schema: string
+  title?: string
+  version?: string;
   termsOfService?: string;
   contact?: Contact;
   license?: License;

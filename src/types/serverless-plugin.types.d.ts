@@ -1,6 +1,6 @@
-'use strict';
-import type { AwsLambdaRuntime } from '@serverless/typescript';
-import { configSchemaHandler } from 'serverless';
+'use strict'
+import type { AwsLambdaRuntime } from '@serverless/typescript'
+import { configSchemaHandler } from 'serverless'
 import type {
   AwsFunctionHandler,
   Custom,
@@ -10,23 +10,23 @@ import type {
   HttpApiEvent,
   Provider,
   Serverless,
-} from 'serverless/aws';
-import type { HttpMethod } from './common.types';
+} from 'serverless/aws'
+import type { HttpMethod } from './common.types'
 
 export type CustomServerless = {
-  cli?: { log: (text: string) => void }; // deprecated and replaced in v3.0.0
-  service: ServerlessConfig;
-  configSchemaHandler: configSchemaHandler;
+  cli?: { log: (text: string) => void } // deprecated and replaced in v3.0.0
+  service: ServerlessConfig
+  configSchemaHandler: configSchemaHandler
   configurationInput: {
-    service?: Serverless['service']; // I think { name: string } is for v2 compatibility?
-    provider?: Provider;
-  };
-};
+    service?: Serverless['service'] // I think { name: string } is for v2 compatibility?
+    provider?: Provider
+  }
+}
 
 // ws and wss are WebSocket schemas
-type SwaggerScheme = 'http' | 'https' | 'ws' | 'wss';
+type SwaggerScheme = 'http' | 'https' | 'ws' | 'wss'
 
-export type ApiType = 'http' | 'httpApi';
+export type ApiType = 'http' | 'httpApi'
 
 export interface AutoSwaggerCustomConfig {
   apiType?: ApiType;
@@ -110,6 +110,7 @@ export interface CustomHttpEvent extends Http {
   bodyType?: string;
   headerParameters?: HeaderParameters;
   queryStringParameters?: QueryStringParameters;
+  authorization?: any;
 }
 
 export interface CustomHttpApiEvent extends HttpApiEvent {
@@ -125,6 +126,7 @@ export interface CustomHttpApiEvent extends HttpApiEvent {
   bodyType?: string;
   headerParameters?: string;
   queryStringParameterType?: string;
+  authorization?: any;
 }
 
 export interface HttpResponses {
