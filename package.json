@@ -24,6 +24,7 @@
     "prettier": "prettier --write '**/*.{ts,js,json,md,yaml}'",
     "publish:manual": "np",
     "test": "jest",
+    "test:watch": "jest --watch",
     "test:ci": "npm test -- --silent"
   },
   "dependencies": {
