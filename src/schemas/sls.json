@@ -1,0 +1,112 @@
+{
+  "service": {
+    "service": "",
+    "provider": {
+      "name": "aws",
+      "stage": "",
+      "profile": "",
+      "environment": {}
+    },
+    "plugins": [],
+    "functions": {
+      "mocked": {
+        "handler": "mocked.handler",
+        "events": [
+          {
+            "http": {
+              "path": "hello",
+              "method": "post",
+              "description": "I like documentation"
+            }
+          }
+        ]
+      }
+    },
+    "custom": {
+      "autoswagger": {}
+    }
+  },
+  "configurationInput": {
+    "service": "",
+    "provider": {
+      "name": "aws",
+      "stage": "",
+      "profile": "",
+      "environment": {}
+    },
+    "plugins": [],
+    "functions": {
+      "mocked": {
+        "handler": "mocked.handler",
+        "events": [
+          {
+            "http": {
+              "path": "hello",
+              "method": "post",
+              "description": "I like documentation"
+            }
+          }
+        ]
+      }
+    },
+    "custom": {
+      "autoswagger": {}
+    }
+  },
+  "configSchemaHandler": {},
+  "service": {
+    "service": "",
+    "provider": {
+      "name": "aws",
+      "stage": "",
+      "profile": "",
+      "environment": {}
+    },
+    "plugins": [],
+    "functions": {
+      "mocked": {
+        "handler": "mocked.handler",
+        "events": [
+          {
+            "http": {
+              "path": "hello",
+              "method": "post",
+              "description": "I like documentation"
+            }
+          }
+        ]
+      }
+    },
+    "custom": {
+      "autoswagger": {}
+    }
+  },
+  "configurationInput": {
+    "service": "",
+    "provider": {
+      "name": "aws",
+      "stage": "",
+      "profile": "",
+      "environment": {}
+    },
+    "plugins": [],
+    "functions": {
+      "mocked": {
+        "handler": "mocked.handler",
+        "events": [
+          {
+            "http": {
+              "path": "hello",
+              "method": "post",
+              "description": "I like documentation"
+            }
+          }
+        ]
+      }
+    },
+    "custom": {
+      "autoswagger": {}
+    }
+  },
+  "configSchemaHandler": {}
+}

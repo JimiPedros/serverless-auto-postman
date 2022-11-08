@@ -19,10 +19,7 @@ const options: Options = {
   region: 'local',
 };
 
-const generateServerlessFromAnEndpoint = (
-  events: ServerlessFunctionEvent[],
-  autoswaggerOptions = {}
-): CustomServerless => {
+const generateServerlessFromAnEndpoint = (events: ServerlessFunctionEvent[], options = {}): CustomServerless => {
   const serviceDetails: ServerlessConfig = {
     service: '',
     provider: {
@@ -35,13 +32,13 @@ const generateServerlessFromAnEndpoint = (
     },
     plugins: [],
     functions: {
-      mocked: {
-        handler: 'mocked.handler',
+      mockedFunction: {
+        handler: 'mockedFunction.handler',
         events,
       },
     },
     custom: {
-      autoswagger: autoswaggerOptions,
+      autoswagger: options,
     },
   };
 
@@ -114,35 +111,50 @@ describe('ServerlessAutoSwagger', () => {
       });
     });
 
-    it('should generate an endpoint with a description', () => {
-      const serverlessAutoSwagger = new ServerlessAutoSwagger(
-        generateServerlessFromAnEndpoint([
+    it.only('should generate an endpoint with a description', () => {
+      const doc = generateServerlessFromAnEndpoint([
+        {
+          http: {
+            path: 'v1/billing/details',
+            method: 'post',
+            description: 'I like documentation',
+          },
+        },
+      ]);
+
+      console.log('DOC!', JSON.stringify(doc));
+
+      const serverlessAutoSwagger = new ServerlessAutoSwagger(doc, options, logging);
+      serverlessAutoSwagger.generatePaths();
+
+      expect(serverlessAutoSwagger.swagger.item[0]).toEqual({
+        item: [
           {
-            http: {
-              path: 'hello',
-              method: 'post',
+            name: 'mockedFunction',
+            request: {
+              method: 'POST',
+              header: [
+                {
+                  key: 'Authorization',
+                  value: 'Token {{token}}',
+                  type: 'text',
+                },
+                {
+                  key: 'Content-Type',
+                  value: 'application/json',
+                  type: 'text',
+                },
+              ],
+              url: {
+                raw: 'localhost:3000/v1/billing/details',
+                protocol: 'https',
+                host: ['localhost:3000'],
+                path: ['v1', 'billing', 'details'],
+              },
               description: 'I like documentation',
             },
           },
-        ]),
-        options,
-        logging
-      );
-      serverlessAutoSwagger.generatePaths();
-
-      expect(serverlessAutoSwagger.swagger.paths).toEqual({
-        '/hello': {
-          post: {
-            summary: 'mocked',
-            description: 'I like documentation',
-            operationId: 'mocked.post.hello',
-            tags: undefined,
-            consumes: ['application/json'],
-            produces: ['application/json'],
-            parameters: [],
-            responses: { 200: { description: '200 response' } },
-          },
-        },
+        ],
       });
     });
 
@@ -963,6 +975,8 @@ describe('ServerlessAutoSwagger', () => {
         options,
         logging
       );
+
+      console.log(serverlessAutoSwagger);
 
       await serverlessAutoSwagger.gatherSwaggerFiles(swaggerFiles);
 

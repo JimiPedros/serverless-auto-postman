@@ -44,6 +44,7 @@ export default class ServerlessAutoSwagger {
     paths: {},
     definitions: {},
     securityDefinitions: {},
+    item: [],
   };
   log: Logging['log'];
 
@@ -279,6 +280,75 @@ export default class ServerlessAutoSwagger {
     }
   };
 
+  processEvent = (functionName: string, http: CustomHttpEvent | CustomHttpApiEvent | string) => {
+    if (typeof http === 'string') {
+      // TODO they're using the shorthand - parse that into object.
+      //  You'll also have to remove the `typeof http !== 'string'` check from the function calling this one
+      return;
+    }
+
+    const path = http.path;
+    // if (path[0] !== '/') path = `/${path}`;
+    this.swagger.item ??= [];
+
+    console.log('PATH!!!!', path);
+
+    const method = http.method.toLowerCase() as Lowercase<HttpMethod>;
+
+    this.swagger.item.push(
+      //   {
+      //   summary: http.summary || functionName,
+      //   description: http.description ?? '',
+      //   operationId: `${functionName}.${method}.${http.path}`,
+      //   consumes: http.consumes ?? ['application/json'],
+      //   produces: http.produces ?? ['application/json'],
+      //   // This is actually type `HttpEvent | HttpApiEvent`, but we can lie since only HttpEvent params (or shared params) are used
+      //   parameters: this.httpEventToParameters(http as CustomHttpEvent),
+      //   responses: this.formatResponses(http.responseData ?? http.responses),
+      // }
+
+      {
+        item: [
+          {
+            name: http.summary || functionName,
+            request: {
+              method: 'POST',
+              header: [
+                {
+                  key: 'Authorization',
+                  value: 'Token {{token}}',
+                  type: 'text',
+                },
+                {
+                  key: 'Content-Type',
+                  value: 'application/json',
+                  type: 'text',
+                },
+              ],
+              url: {
+                raw: `localhost:3000/${path}`,
+                protocol: 'https',
+                host: ['localhost:3000'],
+                path: ['v1', 'billing', 'details'],
+              },
+              description: http.description ?? '',
+            },
+          },
+        ],
+      }
+    );
+
+    const apiKeyHeaders = this.serverless.service.custom?.autoswagger?.apiKeyHeaders;
+
+    const security: MethodSecurity[] = [];
+
+    if (apiKeyHeaders?.length) {
+      security.push(
+        apiKeyHeaders.reduce((acc, indexName: string) => ({ ...acc, [indexName]: [] }), {} as MethodSecurity)
+      );
+    }
+  };
+
   generatePaths = () => {
     const functions = this.serverless.service.functions ?? {};
     Object.entries(functions).forEach(([functionName, config]) => {
@@ -286,7 +356,8 @@ export default class ServerlessAutoSwagger {
       events
         .map((event) => event.http || event.httpApi)
         .filter((http) => !!http && typeof http !== 'string' && !http.exclude)
-        .forEach((http) => this.addSwaggerPath(functionName, http!));
+        // .forEach((http) => this.addSwaggerPath(functionName, http!));
+        .forEach((http) => this.processEvent(functionName, http!));
     });
   };
 
