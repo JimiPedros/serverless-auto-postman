@@ -11,6 +11,7 @@ export interface Swagger {
   securityDefinitions?: Record<string, SecurityDefinition>;
   definitions?: Record<string, Definition>;
   externalDocs?: ExternalDocs;
+  item: any[];
 }
 
 // Info Section
