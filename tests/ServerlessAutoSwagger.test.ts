@@ -1,10 +1,10 @@
-'use strict';
-import * as fs from 'fs-extra';
-import { PathOrFileDescriptor } from 'fs-extra';
-import { Options } from 'serverless';
-import { Logging } from 'serverless/classes/Plugin';
-import ServerlessAutoSwagger from '../src/ServerlessAutoSwagger';
-import { CustomServerless, ServerlessConfig, ServerlessFunctionEvent } from '../src/types/serverless-plugin.types';
+'use strict'
+import * as fs from 'fs-extra'
+import { PathOrFileDescriptor } from 'fs-extra'
+import { Options } from 'serverless'
+import { Logging } from 'serverless/classes/Plugin'
+import ServerlessAutoSwagger from '../src/ServerlessAutoSwagger'
+import { generateServerlessFromAnEndpoint } from './generateServerlessFromAnEndpoint'
 
 const log = {
   notice: jest.fn(),
@@ -17,67 +17,30 @@ const logging: Logging = { log, writeText: () => undefined } as unknown as Loggi
 const options: Options = {
   stage: 'test',
   region: 'local',
-};
-
-const generateServerlessFromAnEndpoint = (events: ServerlessFunctionEvent[], options = {}): CustomServerless => {
-  const serviceDetails: ServerlessConfig = {
-    service: '',
-    provider: {
-      name: 'aws',
-      runtime: undefined,
-      stage: '',
-      region: undefined,
-      profile: '',
-      environment: {},
-    },
-    plugins: [],
-    functions: {
-      mockedFunction: {
-        handler: 'mockedFunction.handler',
-        events,
-      },
-    },
-    custom: {
-      autoswagger: options,
-    },
-  };
-
-  return {
-    service: serviceDetails,
-    configurationInput: serviceDetails,
-    configSchemaHandler: {
-      defineCustomProperties: () => undefined,
-      defineFunctionEvent: () => undefined,
-      defineFunctionEventProperties: () => undefined,
-      defineFunctionProperties: () => undefined,
-      defineProvider: () => undefined,
-      defineTopLevelProperty: () => undefined,
-    },
-  };
-};
+}
 
 describe('ServerlessAutoSwagger', () => {
-  const mockedJsonFiles = new Map<string, string>();
+  const mockedJsonFiles = new Map<string, string>()
 
   jest
     .spyOn<typeof fs, 'readFileSync'>(fs, 'readFileSync')
     .mockImplementation((fileName: PathOrFileDescriptor): string => {
-      const content = mockedJsonFiles.get(fileName as string);
+      const content = mockedJsonFiles.get(fileName as string)
 
       if (!content) {
-        throw new Error(`file ${fileName} not mocked`);
+        throw new Error(`file ${fileName} not mocked`)
       }
 
-      return content;
-    });
+      return content
+    })
 
   const mockJsonFile = (fileName: string, content: Record<string, unknown>): void => {
-    mockedJsonFiles.set(fileName, JSON.stringify(content));
-  };
+    mockedJsonFiles.set(fileName, JSON.stringify(content))
+  }
 
   beforeEach(() => {
-    mockedJsonFiles.clear();
-  });
+    mockedJsonFiles.clear()
+  })
 
   describe('generatePaths', () => {
     it('should generate minimal endpoint', () => {
@@ -92,8 +55,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/hello': {
@@ -108,55 +71,79 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
+      })
+    })
 
     it.only('should generate an endpoint with a description', () => {
-      const doc = generateServerlessFromAnEndpoint([
-        {
-          http: {
-            path: 'v1/billing/details',
-            method: 'post',
-            description: 'I like documentation',
-          },
-        },
-      ]);
 
-      console.log('DOC!', JSON.stringify(doc));
-
-      const serverlessAutoSwagger = new ServerlessAutoSwagger(doc, options, logging);
-      serverlessAutoSwagger.generatePaths();
-
-      expect(serverlessAutoSwagger.swagger.item[0]).toEqual({
-        item: [
+      const serverlessAutoSwagger = new ServerlessAutoSwagger(
+        generateServerlessFromAnEndpoint([
           {
-            name: 'mockedFunction',
-            request: {
-              method: 'POST',
-              header: [
-                {
-                  key: 'Authorization',
-                  value: 'Token {{token}}',
-                  type: 'text',
-                },
-                {
-                  key: 'Content-Type',
-                  value: 'application/json',
-                  type: 'text',
-                },
-              ],
-              url: {
-                raw: 'localhost:3000/v1/billing/details',
-                protocol: 'https',
-                host: ['localhost:3000'],
-                path: ['v1', 'billing', 'details'],
-              },
+            http: {
+              path: 'v1/billing/details',
+              method: 'post',
               description: 'I like documentation',
+              consumes: ['application/json'],
+              authorization: true,
+              request: {
+                parameters: {
+                  querystrings: {
+                    query_a: true,
+                    query_b: true
+                  }
+                }
+              }
             },
           },
-        ],
-      });
-    });
+        ]),
+        options,
+        logging
+      )
+
+      serverlessAutoSwagger.processFunctions()
+
+      expect(serverlessAutoSwagger.swagger.item).toEqual([
+        {
+          item: [
+            {
+              name: 'mockedFunction',
+              request: {
+                method: 'POST',
+                header: [
+                  {
+                    key: 'Content-Type',
+                    value: 'application/json',
+                    type: 'text',
+                  },
+                  {
+                    key: 'Authorization',
+                    value: 'Token {{token}}',
+                    type: 'text',
+                  }
+                ],
+                url: {
+                  raw: 'localhost:3000/v1/billing/details',
+                  protocol: 'https',
+                  host: ['localhost:3000'],
+                  path: ['v1', 'billing', 'details'],
+                  query: [
+                    {
+                      "key": "query_a",
+                      "value": ""
+                    },
+                    {
+                      "key": "query_b",
+                      "value": ""
+                    }
+                  ]
+                },
+                description: 'I like documentation',
+              },
+            },
+          ],
+        }
+      ])
+    })
 
     it('should generate an endpoint with a response', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -183,8 +170,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/hello': {
@@ -206,8 +193,8 @@ describe('ServerlessAutoSwagger', () => {
             },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with path parameters', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -228,8 +215,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/test/{path}': {
@@ -259,8 +246,8 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with query parameters', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -288,8 +275,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -326,8 +313,8 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with query parameters using builtin params', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -349,8 +336,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -380,8 +367,8 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should ignore builtin query params if custom config query params are specified', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -397,8 +384,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -413,8 +400,8 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with header parameters', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -442,8 +429,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -484,8 +471,8 @@ describe('ServerlessAutoSwagger', () => {
             },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with consumes parameter', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -500,8 +487,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -520,8 +507,8 @@ describe('ServerlessAutoSwagger', () => {
             },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with produces parameter', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -536,8 +523,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -556,8 +543,8 @@ describe('ServerlessAutoSwagger', () => {
             },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with header parameters using builtin params', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -579,8 +566,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -614,8 +601,8 @@ describe('ServerlessAutoSwagger', () => {
             },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should ignore builtin header params if custom config header params are specified', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -635,8 +622,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -651,8 +638,8 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should generate an endpoint with multi-valued query parameters', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -679,8 +666,8 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/goodbye': {
@@ -718,8 +705,8 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
+      })
+    })
 
     it('should filter an endpoint with exclude', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
@@ -734,18 +721,18 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
-      serverlessAutoSwagger.generatePaths();
+      )
+      serverlessAutoSwagger.generatePaths()
 
-      expect(serverlessAutoSwagger.swagger.paths).toEqual({});
-    });
+      expect(serverlessAutoSwagger.swagger.paths).toEqual({})
+    })
 
     it('should add path without remove existing', () => {
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
         generateServerlessFromAnEndpoint([{ http: { path: 'hello', method: 'post' } }]),
         options,
         logging
-      );
+      )
       serverlessAutoSwagger.swagger.paths = {
         '/should': {
           get: {
@@ -756,9 +743,9 @@ describe('ServerlessAutoSwagger', () => {
             responses: {},
           },
         },
-      };
+      }
 
-      serverlessAutoSwagger.generatePaths();
+      serverlessAutoSwagger.generatePaths()
 
       expect(serverlessAutoSwagger.swagger.paths).toEqual({
         '/should': {
@@ -782,9 +769,9 @@ describe('ServerlessAutoSwagger', () => {
             responses: { 200: { description: '200 response' } },
           },
         },
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('gatherSwaggerOverrides', () => {
     it('should use defaults if overrides are not specified', () => {
@@ -800,9 +787,9 @@ describe('ServerlessAutoSwagger', () => {
         ]),
         options,
         logging
-      );
+      )
 
-      serverlessAutoSwagger.gatherSwaggerOverrides();
+      serverlessAutoSwagger.gatherSwaggerOverrides()
 
       expect(serverlessAutoSwagger.swagger).toEqual({
         definitions: expect.any(Object),
@@ -810,13 +797,13 @@ describe('ServerlessAutoSwagger', () => {
         paths: expect.any(Object),
         securityDefinitions: expect.any(Object),
         swagger: '2.0',
-      });
-    });
+      })
+    })
 
     it('should use overrides if specified', () => {
-      const fileName = 'test.json';
-      const swaggerDoc = { foo: { bar: true } };
-      mockJsonFile(fileName, swaggerDoc);
+      const fileName = 'test.json'
+      const swaggerDoc = { foo: { bar: true } }
+      mockJsonFile(fileName, swaggerDoc)
 
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
         generateServerlessFromAnEndpoint(
@@ -840,9 +827,9 @@ describe('ServerlessAutoSwagger', () => {
         ),
         options,
         logging
-      );
+      )
 
-      serverlessAutoSwagger.gatherSwaggerOverrides();
+      serverlessAutoSwagger.gatherSwaggerOverrides()
 
       expect(serverlessAutoSwagger.swagger).toEqual({
         definitions: expect.any(Object),
@@ -854,9 +841,9 @@ describe('ServerlessAutoSwagger', () => {
         basePath: '/bp',
         host: 'some-host',
         ...swaggerDoc,
-      });
-    });
-  });
+      })
+    })
+  })
 
   describe('gatherSwaggerFiles', () => {
     it('should add additionalProperties', async () => {
@@ -864,9 +851,9 @@ describe('ServerlessAutoSwagger', () => {
         foo: {
           bar: true,
         },
-      });
+      })
 
-      const swaggerFiles = ['test.json'];
+      const swaggerFiles = ['test.json']
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
         generateServerlessFromAnEndpoint(
           [
@@ -882,9 +869,9 @@ describe('ServerlessAutoSwagger', () => {
         ),
         options,
         logging
-      );
+      )
 
-      await serverlessAutoSwagger.gatherSwaggerFiles(swaggerFiles);
+      await serverlessAutoSwagger.gatherSwaggerFiles(swaggerFiles)
 
       expect(serverlessAutoSwagger.swagger).toEqual({
         swagger: '2.0',
@@ -893,15 +880,15 @@ describe('ServerlessAutoSwagger', () => {
         definitions: {},
         securityDefinitions: {},
         foo: { bar: true },
-      });
-    });
+      })
+    })
 
     it('should extend existing property', async () => {
       mockJsonFile('test.json', {
         schemes: ['http'],
-      });
+      })
 
-      const swaggerFiles = ['test.json'];
+      const swaggerFiles = ['test.json']
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
         generateServerlessFromAnEndpoint(
           [
@@ -917,9 +904,9 @@ describe('ServerlessAutoSwagger', () => {
         ),
         options,
         logging
-      );
+      )
 
-      await serverlessAutoSwagger.gatherSwaggerFiles(swaggerFiles);
+      await serverlessAutoSwagger.gatherSwaggerFiles(swaggerFiles)
 
       expect(serverlessAutoSwagger.swagger).toEqual({
         swagger: '2.0',
@@ -928,8 +915,8 @@ describe('ServerlessAutoSwagger', () => {
         paths: {},
         securityDefinitions: {},
         definitions: {},
-      });
-    });
+      })
+    })
 
     it('should cumulate files', async () => {
       mockJsonFile('foobar.json', {
@@ -942,7 +929,7 @@ describe('ServerlessAutoSwagger', () => {
             type: 'number',
           },
         },
-      });
+      })
 
       mockJsonFile('helloworld.json', {
         paths: {
@@ -956,9 +943,9 @@ describe('ServerlessAutoSwagger', () => {
             type: 'string',
           },
         },
-      });
+      })
 
-      const swaggerFiles = ['helloworld.json', 'foobar.json'];
+      const swaggerFiles = ['helloworld.json', 'foobar.json']
       const serverlessAutoSwagger = new ServerlessAutoSwagger(
         generateServerlessFromAnEndpoint(
           [
@@ -974,11 +961,11 @@ describe('ServerlessAutoSwagger', () => {
         ),
         options,
         logging
-      );
+      )
 
-      console.log(serverlessAutoSwagger);
+      console.log(serverlessAutoSwagger)
 
-      await serverlessAutoSwagger.gatherSwaggerFiles(swaggerFiles);
+      await serverlessAutoSwagger.gatherSwaggerFiles(swaggerFiles)
 
       expect(serverlessAutoSwagger.swagger).toEqual({
         swagger: '2.0',
@@ -1000,7 +987,7 @@ describe('ServerlessAutoSwagger', () => {
             type: 'number',
           },
         },
-      });
-    });
-  });
-});
+      })
+    })
+  })
+})
