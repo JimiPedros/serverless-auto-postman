@@ -1,110 +1,142 @@
-import type { HttpMethod } from './common.types';
+import type { HttpMethod } from './common.types'
 
 export interface Swagger {
-  swagger: string;
-  info: Info;
-  host?: string;
-  basePath?: string;
-  tags?: Tag[];
-  schemes?: string[];
-  paths: Paths;
-  securityDefinitions?: Record<string, SecurityDefinition>;
-  definitions?: Record<string, Definition>;
-  externalDocs?: ExternalDocs;
-  item: any[];
+  info: Info
+  host: string
+  basePath?: string
+  tags?: Tag[]
+  paths?: Paths
+  securityDefinitions?: Record<string, SecurityDefinition>
+  definitions?: Record<string, Definition>
+  externalDocs?: ExternalDocs
+  item: Array<Directory | Item>
+}
+
+export interface Directory {
+  name: string
+  item: Array<Directory | Item>
+}
+
+export interface Item {
+  name: string
+  request: Request
+  response?: Response[]
+}
+
+export interface Response {
+  name: string
+  originalRequest: OriginalRequest
+  status: string
+  code: number
+  _postman_previewlanguage: string
+  header: any[]
+  cookie: any[]
+  body: string
+}
+
+export interface Header {
+  key: string
+  value: string
+  type: string
+  description?: string
+}
+
+export interface Body {
+  mode: string
+  raw: string
+}
+
+export interface Query {
+  key: string
+  value: string
+  description?: string
+}
+
+export interface Url {
+  raw: string
+  protocol: string
+  host: string[]
+  path: string[]
+  query: Query[]
+}
+
+export interface Request {
+  method: string
+  header?: Header[]
+  body?: Body
+  url: Url
+  description?: string
+}
+
+export interface OriginalRequest {
+  method: string
+  header: Header[]
+  body: Body
+  url: Url
 }
 
 // Info Section
 export interface Info {
   _postman_id?: string
-  name?: string;
-  description?: string;
-  schema: string
-  title?: string
-  version?: string;
-  termsOfService?: string;
-  contact?: Contact;
-  license?: License;
+  name?: string
+  description?: string
+  schema?: string
 }
 
-export interface Contact {
-  name?: string;
-  url?: string;
-  email?: string;
-}
-export interface License {
-  name: string;
-  url?: string;
-}
 
 // Tag Section
 export interface Tag {
-  name: string;
-  description?: string;
-  externalDocs?: ExternalDocs;
+  name: string
+  description?: string
+  externalDocs?: ExternalDocs
 }
 
-// Path Section
-export type Paths = Record<string, PathMethods>;
-type PathMethods = Partial<Record<Lowercase<HttpMethod>, MethodDetails>>;
-
-export interface MethodDetails {
-  tags?: string[];
-  summary?: string;
-  description?: string;
-  operationId: string;
-  consumes: string[];
-  produces: string[];
-  parameters: Parameter[];
-  responses: Record<string, Response>;
-  security?: MethodSecurity[];
-}
 export interface Parameter {
-  in: string;
-  name: string;
-  description?: string;
-  required?: boolean;
-  schema?: SchemaRef;
-  type?: string;
+  in: string
+  name: string
+  description?: string
+  required?: boolean
+  schema?: SchemaRef
+  type?: string
 }
 export interface SchemaRef {
-  $ref: string;
-}
-export interface Response {
-  description: string;
-  schema?: SchemaRef;
+  $ref: string
 }
 
-type SecurityType = string;
-export type MethodSecurity = Record<SecurityType, string[]>;
+
+type SecurityType = string
+export type MethodSecurity = Record<SecurityType, string[]>
 
 // Security Section
 export interface SecurityDefinition {
-  type: string;
-  name?: string;
-  in?: string;
-  authorizationUrl?: string;
-  flow?: string;
-  scopes?: Record<string, string>;
+  type: string
+  name?: string
+  in?: string
+  authorizationUrl?: string
+  flow?: string
+  scopes?: Record<string, string>
 }
 
 // definition Section
 
 export interface Definition {
-  type?: string;
-  items?: { $ref: string };
-  format?: Format;
-  default?: any;
-  description?: string;
-  required?: string[];
-  additionalProperties?: boolean;
-  enum?: string[];
-  properties?: Record<string, Definition>;
-  anyOf?: { const: string; type: string }[];
+  type?: string
+  items?: { $ref: string }
+  format?: Format
+  default?: any
+  description?: string
+  required?: string[]
+  additionalProperties?: boolean
+  enum?: string[]
+  properties?: Record<string, Definition>
+  anyOf?: {
+    const: string,
+    type: string
+  }[]
 }
-type Format = 'date-time' | 'int32' | 'int64';
+type Format = 'date-time' | 'int32' | 'int64'
 
 export interface ExternalDocs {
-  description: string;
-  url: string;
+  description: string
+  url: string
 }
